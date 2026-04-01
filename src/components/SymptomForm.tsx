@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Search, Activity, CalendarDays } from "lucide-react";
+import { CalendarIcon, Search, Activity, CalendarDays, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -20,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { matchDoctor, type MatchResult } from "@/api/medimatch";
+import DoctorResultCard from "@/components/DoctorResultCard";
 
 const SEVERITY_LEVELS = [
   { value: "mild", label: "Mild", description: "Minor discomfort, can carry out daily activities" },
@@ -32,31 +33,39 @@ const SymptomForm = ({ userName, city }: { userName: string; city: string }) => 
   const [symptoms, setSymptoms] = useState("");
   const [severity, setSeverity] = useState("");
   const [date, setDate] = useState<Date>();
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<MatchResult | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!symptoms || !severity || !date) {
       toast({ title: "Please fill all fields", variant: "destructive" });
       return;
     }
-    toast({
-      title: "Finding your doctor…",
-      description: `Matching doctors in ${city} for your symptoms. Backend integration coming soon!`,
-    });
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const fullSymptoms = `${symptoms} (Severity: ${severity}, Preferred date: ${format(date, "PPP")})`;
+      const matchResult = await matchDoctor(fullSymptoms, city);
+      setResult(matchResult);
+    } catch (e: any) {
+      toast({
+        title: "Connection Error",
+        description:
+          e.message === "Failed to fetch"
+            ? "Could not connect to backend. Make sure the FastAPI server is running on localhost:8000."
+            : e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12">
-      {/* Header */}
-      <div className="mb-10 text-center">
-        <h1 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-          Hi, {userName} 👋
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          Tell us what's bothering you and our AI will match you with the right doctor in <span className="font-semibold text-primary">{city}</span>.
-        </p>
-      </div>
-
+    <div className="space-y-8">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Symptoms Card */}
         <Card className="border shadow-sm hover:shadow-md transition-shadow">
@@ -83,7 +92,6 @@ const SymptomForm = ({ userName, city }: { userName: string; city: string }) => 
 
         {/* Severity & Date Row */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Severity */}
           <Card className="border shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
@@ -115,7 +123,6 @@ const SymptomForm = ({ userName, city }: { userName: string; city: string }) => 
             </CardContent>
           </Card>
 
-          {/* Appointment Date */}
           <Card className="border shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
@@ -158,10 +165,27 @@ const SymptomForm = ({ userName, city }: { userName: string; city: string }) => 
         </div>
 
         {/* Submit */}
-        <Button type="submit" size="lg" className="w-full text-lg font-semibold h-14">
-          🔍 Find My Doctor
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full text-lg font-semibold h-14"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Finding your doctor…
+            </>
+          ) : (
+            "🔍 Find My Doctor"
+          )}
         </Button>
       </form>
+
+      {/* Result */}
+      {result && (
+        <DoctorResultCard result={result} patientName={userName} symptoms={symptoms} />
+      )}
     </div>
   );
 };

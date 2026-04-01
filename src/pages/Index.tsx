@@ -1,8 +1,10 @@
 import { useState } from "react";
 import WelcomeDialog from "@/components/WelcomeDialog";
 import SymptomForm from "@/components/SymptomForm";
-import { Stethoscope, MapPin } from "lucide-react";
+import ChatPanel from "@/components/ChatPanel";
+import { Stethoscope, MapPin, Search, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface UserData {
   name: string;
@@ -45,7 +47,40 @@ const Index = () => {
             </div>
           </header>
 
-          <SymptomForm userName={user.name.split(" ")[0]} city={user.city} />
+          <div className="mx-auto w-full max-w-3xl px-4 py-12">
+            {/* Header */}
+            <div className="mb-10 text-center">
+              <h1 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+                Hi, {user.name.split(" ")[0]} 👋
+              </h1>
+              <p className="mt-3 text-lg text-muted-foreground">
+                Tell us what's bothering you and our AI will match you with the right doctor in{" "}
+                <span className="font-semibold text-primary">{user.city}</span>.
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <Tabs defaultValue="match" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="match" className="gap-2">
+                  <Search className="h-4 w-4" />
+                  Quick Match
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  Chat with AI
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="match">
+                <SymptomForm userName={user.name.split(" ")[0]} city={user.city} />
+              </TabsContent>
+
+              <TabsContent value="chat">
+                <ChatPanel city={user.city} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </>
       )}
     </div>
