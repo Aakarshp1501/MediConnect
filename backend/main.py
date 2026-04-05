@@ -9,7 +9,7 @@ import os
 import google.generativeai as genai
 
 
-genai.configure(api_key='AIzaSyBBKYfKIkldzkKmTLXc-iqIdE-1w48a6lY')
+genai.configure(api_key='YOUR GEMINI KEY HERE')
 
 app = FastAPI(title="MediMatch AI Agent", version="1.0.0")
 
