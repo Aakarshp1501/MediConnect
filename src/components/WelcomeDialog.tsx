@@ -21,7 +21,7 @@ import { Stethoscope } from "lucide-react";
 const CITIES = [
   "Mumbai",
   "Delhi",
-  "Bangalore",
+  "Bengaluru",
   "Hyderabad",
   "Chennai",
   "Kolkata",
