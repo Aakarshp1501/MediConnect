@@ -184,7 +184,7 @@ const SymptomForm = ({ userName, city }: { userName: string; city: string }) => 
 
       {/* Result */}
       {result && (
-        <DoctorResultCard result={result} patientName={userName} symptoms={symptoms} />
+        <DoctorResultCard result={result} patientName={userName} symptoms={symptoms} preferredDate={date} />
       )}
     </div>
   );

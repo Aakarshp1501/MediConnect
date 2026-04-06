@@ -28,17 +28,27 @@ interface DoctorResultCardProps {
   result: MatchResult;
   patientName: string;
   symptoms: string;
+  preferredDate?: Date;
 }
 
-const DoctorResultCard = ({ result, patientName, symptoms }: DoctorResultCardProps) => {
+const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const DoctorResultCard = ({ result, patientName, symptoms, preferredDate }: DoctorResultCardProps) => {
   const [selectedSlot, setSelectedSlot] = useState("");
   const [bookingName, setBookingName] = useState(patientName);
   const [loading, setLoading] = useState(false);
   const [booked, setBooked] = useState(false);
 
-  const slots = result.available_slots
+  const allSlots = result.available_slots
     ? result.available_slots.split(",").map((s) => s.trim())
     : [];
+
+  const preferredDayAbbr = preferredDate ? DAY_ABBR[preferredDate.getDay()] : null;
+  const slots = preferredDayAbbr
+    ? allSlots.filter((s) => s.startsWith(preferredDayAbbr))
+    : allSlots;
+
+  const noSlotsOnDay = preferredDayAbbr && slots.length === 0;
 
   const handleBook = async () => {
     if (!selectedSlot || !bookingName.trim()) return;
@@ -143,38 +153,62 @@ const DoctorResultCard = ({ result, patientName, symptoms }: DoctorResultCardPro
             <div className="flex items-center gap-2">
               <CalendarCheck className="h-5 w-5 text-primary" />
               <h4 className="font-display font-semibold">Book Appointment</h4>
-            </div>
-            <Input
-              placeholder="Your full name"
-              value={bookingName}
-              onChange={(e) => setBookingName(e.target.value)}
-            />
-            <Select value={selectedSlot} onValueChange={setSelectedSlot}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a time slot" />
-              </SelectTrigger>
-              <SelectContent>
-                {slots.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleBook}
-              disabled={loading || !selectedSlot || !bookingName.trim()}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Booking…
-                </>
-              ) : (
-                "Confirm Appointment"
+              {preferredDayAbbr && (
+                <span className="ml-auto text-xs text-muted-foreground">
+                  Slots for {preferredDayAbbr} ({preferredDate?.toLocaleDateString()})
+                </span>
               )}
-            </Button>
+            </div>
+            {noSlotsOnDay ? (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                ⚠️ No available slots on{" "}
+                <strong>
+                  {preferredDate?.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </strong>
+                .<br />
+                <span className="text-xs text-yellow-700 mt-1 block">
+                  All available slots: {allSlots.join(", ")}
+                </span>
+              </div>
+            ) : (
+              <>
+                <Input
+                  placeholder="Your full name"
+                  value={bookingName}
+                  onChange={(e) => setBookingName(e.target.value)}
+                />
+                <Select value={selectedSlot} onValueChange={setSelectedSlot}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a time slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {slots.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleBook}
+                  disabled={loading || !selectedSlot || !bookingName.trim()}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Booking…
+                    </>
+                  ) : (
+                    "Confirm Appointment"
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
